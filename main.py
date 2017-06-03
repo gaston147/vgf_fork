@@ -1,103 +1,141 @@
-import datetime as l
+import datetime
 import sys
-import time as tm
+import time
+import os
+import math
 
 libs = []
 version = 1.14
 name = "Alexandra"
 params = []
-d=l.date.today()
+d = datetime.date.today()
 
-def init(directory, par):
-    libs = loadLibrairies(directory)
+class StopAI(Exception):
+    pass
+
+def yn(s):
+    v = None
+    while v != "Y" and v != "N":
+        v = input(s)
+    return v == "Y"
+
+def slow_write(stm, c_speed, s):
+    for c in s:
+        stm.write(c)
+        stm.flush()
+        time.sleep(c_speed)
+
+def init(libs_path, par):
+    if not os.path.isdir(libs_path):
+        os.makedirs(libs_path)
+    libs = loadLibraries(libs_path)
     for i in par:
         params.append(libs[getCompiledPars("__PATH__")])
 
 def start():
-    init("VGF\libs\\", (77,8,4,3.0))
-    setupMainCore()
-    switch_AI("ON")
-    startDiscussionProcess()
-                      
-def readLibrary(path):
-    file = open(path)
-    tab = file.read()
-    tab=tab.split("\n")
-    names=tab[0].split("\t")
-    if(maxTime==0):
-        maxTime=len(tab)
-    new_tab = []
-    for i in range(len(names)):
-        new_tab.append([])
- 
-    for i in range(1,maxTime-1):
-        split=tab[i].split("\t")   
-        for j in range(0,len(split)):
-            new_tab[j].append(float(split[j]))
-        
-    print(maxTime)
-    print(names)
-    return names,new_tab
+    try:
+        init("VGF/libs/", ( 77, 8, 4, 3.0 ))
+        setupMainCore()
+        switch_AI("ON")
+        startDiscussionProcess()
+    except StopAI:
+        pass
 
-def loadLibraries(directory):
-    for lib in directory:
-        current=lib.open()
-        libs.append(readLibrary(current)[1].PATH)
+    print("Shutting down")
+    time.sleep(3)
+    print("Succesfully shut down!")
+    time.sleep(2)
+    return 0
+
+def readLibrary(lib_path):
+    with open(lib_path) as f:
+        tab = f.read()
+        tab = tab.split("\n")
+        names = tab[0].split("\t")
+        if maxTime == 0:
+            maxTime = len(tab)
+        new_tab = []
+        for i in range(len(names)):
+            new_tab.append([])
+        for i in range(1, maxTime-1):
+            split = tab[i].split("\t")   
+            for j in range(0, len(split)):
+                new_tab[j].append(float(split[j]))
+        return names, new_tab
+
+def loadLibraries(libs_path):
+    libs = [ 0 ]
+    for lib_file in os.listdir(libs_path):
+        lib_path = os.path.join(libs_path, lib_file)
+        if os.path.isfile(lib_path):
+            libs.append(readLibrary(os.path.join(libs_path, lib_file)))
+    return libs
 
 def castToFloat(string):
-    string=string.replace(',','.')
-    if'E' in string:
-        return float(string[:-3])*pow(10,float(string[-2:]))
+    string = string.replace(',', '.')
+    indE = string.find('E')
+    if indE >= 0:
+        return float(string[:indE]) * pow(10, float(string[indE + 1:]))
     else:
         return float(string)
 
 def date():
     while True:
-     v=d.day+d.month+d.year
-     for i in range(2,v+1):
-      if v%i==0:
-       break
-     if i==v:
-      return d
-      sys.exit(0)
-     d+=l.timedelta(days=1)
+        v = d.day + d.month + d.year
+        n_max = math.floor(math.sqrt(v))
+        i = 0
+        while i <= n_max:
+            if v % i == 0:
+                break
+            i = i + 1
+        if i > n_max:
+            return d
+        d += datetime.timedelta(days = 1)
 
 def setupMainCore():
-    tm.sleep(0.5)
+    time.sleep(0.5)
     print("Setting up main core...")
-    tm.sleep(1)
+    time.sleep(3)
     print("Done")
-    tm.sleep(2)
-
-
-def loadLibrairies(directory):
-    return [0]
 
 def getCompiledPars(a):
     return 0
 
 def switch_AI(a):
     print("Switching AI  ON...")
-    tm.sleep(12)
-    input("Modules [Recursive, Parser, Indentation] could not be loaded. Continue ?Y/N ")
+    time.sleep(12)
+    if not yn("Modules [Recursive, Parser, Indentation] could not be loaded. Continue? [Y/N] "):
+        raise StopAI()
     print("AI on")
+
+n = 0
+def send_to_AI(msg):
+    global name, n
+    cont = True
+    if n == 0:
+        time.sleep(4)
+    elif n == 1:
+        time.sleep(1)
+    sys.stdout.write("<")
+    sys.stdout.write(name)
+    sys.stdout.write("> ")
+    if n == 0:
+        slow_write(sys.stdout, 0.1, "Bonjour\n")
+    elif n == 1:
+        slow_write(sys.stdout, 0.1, "Désolé j'ai pas très envie d'être en relation en ce moment\n")
+        cont = False
+    sys.stdout.flush()
+    n = n + 1
+    return cont
 
 def startDiscussionProcess():
     print("Starting Discussion Process. Language set as:   DEFAULT(French)")
-    tm.sleep(20)
+    time.sleep(24)
     print("Done")
-    tm.sleep(4)
     print("You can now engage conversation!")
-    input("<You>")
-    tm.sleep(4)
-    print("<Alexandra>Bonjour")
-    input("<You>")
-    tm.sleep(1)
-    print("<Alexandra>Désolé j'ai pas très envie d'être en relation en ce moment")
-    tm.sleep(1)
-    print("Shutting down")
-    tm.sleep(3)
-    print("Succesfully shut down !")
-    tm.sleep(2)
-    exit(0)
-    return 0
+    cont = True
+    while cont:
+        msg = input("<You> ")
+        cont = send_to_AI(msg)
+
+sys.exit(start())
